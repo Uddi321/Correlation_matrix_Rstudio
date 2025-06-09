@@ -1,0 +1,68 @@
+# Load required packages
+library(openxlsx)   # For reading Excel files
+library(ggplot2)    # For creating the plot
+library(reshape2)   # For data manipulation
+
+# 1. Read your Excel data -------------------------------------------------
+# Replace "your_file.xlsx" with your actual filename
+# Replace "Sheet1" with your sheet name if different
+library(readxl)
+CorrawpomF <- read_excel("D:/PhD/correlation matrix Namkhana/CorrawpomF.xlsx")
+View(CorrawpomF)
+data <- read.xlsx("CorrawpomF.xlsx", sheet = "Sheet1")
+
+# 2. Clean and prepare data -----------------------------------------------
+# Remove any non-numeric columns if needed
+CorrawpomF <- data[, sapply(data, is.numeric)]
+
+# 3. Calculate correlation matrix -----------------------------------------
+cor_matrix <- round(cor(CorrawpomF, use = "complete.obs"), 2)
+
+# 4. Define proper chemical notation labels -------------------------------
+# These will appear on your plot axes
+parameter_labels <- c(
+  "pH", 
+  "EC", 
+  "TDS", 
+  "TH",
+  expression("Na"^"+"), 
+  expression("K"^"+"), 
+  expression("Ca"^"2+"), 
+  expression("Mg"^"2+"),
+  expression("HCO"[3]^"-"), 
+  expression("Cl"^"-"),
+  expression("SO"[4]^"2-"), 
+  expression("NO"[3]^"-")
+)
+
+# 5. Create the correlation plot ------------------------------------------
+ggplot(data = melt(cor_matrix), 
+       aes(x = Var1, y = Var2, fill = value, label = ifelse(value != 1, value, ""))) +
+  geom_tile(color = "white", linewidth = 0.3) +
+  geom_text(color = "black", size = 3.5) +
+  scale_fill_gradient2(
+    low = "#0571b0", 
+    high = "#ca0020", 
+    mid = "white",
+    midpoint = 0,
+    limit = c(-1, 1),
+    name = "Correlation\nCoefficient"
+  ) +
+  scale_x_discrete(limits = colnames(cor_matrix), labels = parameter_labels) +
+  scale_y_discrete(limits = colnames(cor_matrix), labels = parameter_labels) +
+  labs(
+    title = "Water Quality Parameters Correlation Matrix",
+    x = "",
+    y = ""
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+    panel.grid = element_blank(),
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  ) +
+  coord_fixed()
+
+# 6. Save the plot -------------------------------------------------------
+ggsave("Water_Quality_Correlation.png", width = 10, height = 8, dpi = 300)
